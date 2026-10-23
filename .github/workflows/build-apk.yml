@@ -1,0 +1,61 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # The repo only contains lib/, assets/ and pubspec.yaml.
+      # This generates the android/ folder (it never overwrites lib/).
+      - name: Generate Android project
+        run: |
+          if [ ! -d android ]; then
+            flutter create --platforms=android --org com.kidslearning --project-name kids_learning_app .
+            rm -f test/widget_test.dart
+          fi
+          # App name shown under the icon
+          sed -i 's/android:label="[^"]*"/android:label="Kids Learning App"/' android/app/src/main/AndroidManifest.xml
+          grep -n 'android:label' android/app/src/main/AndroidManifest.xml
+
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk KidsLearningApp.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KidsLearningApp-apk
+          path: KidsLearningApp.apk
+
+      # When you push a tag like v1.0.0, the APK is also attached to a GitHub Release
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: KidsLearningApp.apk
