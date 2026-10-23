@@ -5,6 +5,8 @@ import '../core/settings.dart';
 import '../widgets/common.dart';
 import '../widgets/mascot.dart';
 import 'home.dart';
+import 'letter_games.dart';
+import 'toys.dart';
 
 class ParentScreen extends StatelessWidget {
   const ParentScreen({super.key});
@@ -20,12 +22,38 @@ class ParentScreen extends StatelessWidget {
           for (final a in allActivities) {
             if (a.id == id) return '${a.emoji} ${a.en}';
           }
+          for (final g in letterGames) {
+            if (g.id == id) return '${g.emoji} ${g.en}';
+          }
           return id == 'stickers' ? '📒 Sticker book' : id;
         }
 
         return Scaffold(
           appBar: AppBar(title: const Text('Parent Zone'), backgroundColor: const Color(0xFFFFE0B2)),
           body: ListView(padding: const EdgeInsets.all(16), children: [
+            _h('Teacher Mode'),
+            SwitchListTile(
+              secondary: const Text('🍎', style: TextStyle(fontSize: 26)),
+              title: const Text('Teacher Mode'),
+              subtitle: const Text('Unlocks every activity for any age, for classroom or guided use'),
+              value: s.teacher,
+              onChanged: (v) => s.update(() => s.teacher = v),
+            ),
+            ListTile(
+              leading: const Text('📋', style: TextStyle(fontSize: 26)),
+              title: const Text('Report Card'),
+              subtitle: const Text('Letter-by-letter progress, accuracy and what to practise next'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReportCardScreen())),
+            ),
+            _h('Child lock'),
+            SwitchListTile(
+              secondary: const Text('🔒', style: TextStyle(fontSize: 26)),
+              title: const Text('Child lock'),
+              subtitle: const Text('Back button is blocked and the 🏠 button must be held for 1 second'),
+              value: s.childLock,
+              onChanged: (v) => s.update(() => s.childLock = v),
+            ),
             _h('Child\'s age'),
             SegmentedButton<AgeMode>(
               segments: const [
@@ -115,7 +143,26 @@ class ParentScreen extends StatelessWidget {
                 }
               },
             ),
-            _h('Games'),
+            _h('Game groups'),
+            SwitchListTile(
+              secondary: const Text('✍️', style: TextStyle(fontSize: 24)),
+              title: const Text('Tracing games'),
+              value: !s.disabledGames.contains('group:tracing'),
+              onChanged: (v) => s.update(() => v ? s.disabledGames.remove('group:tracing') : s.disabledGames.add('group:tracing')),
+            ),
+            SwitchListTile(
+              secondary: const Text('🔊', style: TextStyle(fontSize: 24)),
+              title: const Text('Phonics games'),
+              value: !s.disabledGames.contains('group:phonics'),
+              onChanged: (v) => s.update(() => v ? s.disabledGames.remove('group:phonics') : s.disabledGames.add('group:phonics')),
+            ),
+            SwitchListTile(
+              secondary: const Text('🎮', style: TextStyle(fontSize: 24)),
+              title: const Text('Letter mini-games'),
+              value: !s.disabledGames.contains('group:games'),
+              onChanged: (v) => s.update(() => v ? s.disabledGames.remove('group:games') : s.disabledGames.add('group:games')),
+            ),
+            _h('Activities on the map'),
             for (final a in allActivities)
               CheckboxListTile(
                 dense: true,
@@ -130,6 +177,21 @@ class ParentScreen extends StatelessWidget {
                   }
                 }),
               ),
+            _h('ABC Land games'),
+            for (final g in letterGames)
+              CheckboxListTile(
+                dense: true,
+                secondary: Text(g.emoji, style: const TextStyle(fontSize: 24)),
+                title: Text('${g.en}  (${['0–2', '2–3', '3–5'][g.minAge.index]}+, ${g.group})'),
+                value: !s.disabledGames.contains(g.id),
+                onChanged: (v) => s.update(() {
+                  if (v == true) {
+                    s.disabledGames.remove(g.id);
+                  } else {
+                    s.disabledGames.add(g.id);
+                  }
+                }),
+              ),
             _h('Progress (saved only on this phone)'),
             Card(
               child: Padding(
@@ -139,6 +201,7 @@ class ParentScreen extends StatelessWidget {
                     _stat('⏱️', '${s.totalMinutes}', 'minutes'),
                     _stat('🎁', '${s.stickers}', 'stickers'),
                     _stat('✏️', '${s.traced.length}', 'letters traced'),
+                    _stat('🧸', '${s.toys.length}', 'toys'),
                   ]),
                   const SizedBox(height: 12),
                   if (fav.isNotEmpty) ...[
@@ -186,7 +249,7 @@ class ParentScreen extends StatelessWidget {
               subtitle: Text('Works fully offline. No internet permission, no ads, no accounts. '
                   'Settings and progress stay only on this phone.'),
             ),
-            const ListTile(leading: Icon(Icons.info_outline), title: Text('Kids Learning App'), subtitle: Text('Version 2.0.0')),
+            const ListTile(leading: Icon(Icons.info_outline), title: Text('Kids Learning App'), subtitle: Text('Version 3.0.0')),
           ]),
         );
       },

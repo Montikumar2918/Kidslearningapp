@@ -44,6 +44,12 @@ class _SceneBackgroundState extends State<SceneBackground> with SingleTickerProv
         return const [Color(0xFFB3E5FC), Color(0xFFF1F8E9)];
       case Season.holi:
         return const [Color(0xFFF8BBD0), Color(0xFFFFF9C4)];
+      case Season.halloween:
+        return const [Color(0xFF7E57C2), Color(0xFFFFCC80)];
+      case Season.christmas:
+        return const [Color(0xFF90CAF9), Color(0xFFF1F8E9)];
+      case Season.school:
+        return const [Color(0xFF80DEEA), Color(0xFFFFF9C4)];
       default:
         return const [Color(0xFF81D4FA), Color(0xFFE1F5FE)];
     }
@@ -106,8 +112,9 @@ class _StaticScenePainter extends CustomPainter {
     cl(s.width * 0.18, s.height * 0.09, 24);
     cl(s.width * 0.6, s.height * 0.17, 18);
     if (!hills) return;
-    final green = season == Season.winter ? const Color(0xFFF5F5F5) : const Color(0xFFA5D6A7);
-    final green2 = season == Season.winter ? const Color(0xFFE0E0E0) : const Color(0xFF81C784);
+    final snowy = season == Season.winter || season == Season.christmas;
+    final green = snowy ? const Color(0xFFF5F5F5) : const Color(0xFFA5D6A7);
+    final green2 = snowy ? const Color(0xFFE0E0E0) : const Color(0xFF81C784);
     final h1 = Path()
       ..moveTo(0, s.height * 0.86)
       ..quadraticBezierTo(s.width * 0.3, s.height * 0.78, s.width * 0.6, s.height * 0.87)
@@ -123,6 +130,35 @@ class _StaticScenePainter extends CustomPainter {
       ..close();
     canvas.drawPath(h1, Paint()..color = green.withValues(alpha: tinted ? 0.6 : 1));
     canvas.drawPath(h2, Paint()..color = green2.withValues(alpha: tinted ? 0.6 : 1));
+    if (season == Season.halloween) {
+      // smiling pumpkins on the hill
+      for (var i = 0; i < 4; i++) {
+        final c = Offset(s.width * (0.12 + i * 0.25), s.height * 0.95);
+        canvas.drawOval(Rect.fromCenter(center: c, width: 40, height: 30), Paint()..color = const Color(0xFFFF8F00));
+        canvas.drawRect(Rect.fromCenter(center: c.translate(0, -17), width: 5, height: 8), Paint()..color = const Color(0xFF558B2F));
+        final face = Paint()..color = const Color(0xFF5D4037);
+        canvas.drawCircle(c.translate(-7, -3), 2.5, face);
+        canvas.drawCircle(c.translate(7, -3), 2.5, face);
+        canvas.drawArc(Rect.fromCenter(center: c.translate(0, 3), width: 16, height: 10), 0.2, pi - 0.4, false,
+            face..style = PaintingStyle.stroke..strokeWidth = 2);
+      }
+    }
+    if (season == Season.christmas) {
+      for (var i = 0; i < 3; i++) {
+        final x = s.width * (0.15 + i * 0.35), y = s.height * 0.97;
+        for (var k = 0; k < 3; k++) {
+          final w = 46.0 - k * 12, top = y - 18 - k * 16;
+          canvas.drawPath(
+              Path()
+                ..moveTo(x - w / 2, top + 20)
+                ..lineTo(x, top - 4)
+                ..lineTo(x + w / 2, top + 20)
+                ..close(),
+              Paint()..color = const Color(0xFF2E7D32));
+        }
+        drawStar(canvas, Offset(x, y - 70), 7, Paint()..color = const Color(0xFFFFD600));
+      }
+    }
     if (season == Season.diwali) {
       // diyas on the hill
       for (var i = 0; i < 6; i++) {
@@ -153,6 +189,51 @@ class _ParticlePainter extends CustomPainter {
       final sd = _seeds[i];
       final p = (t * (0.6 + sd[2]) + sd[1]) % 1.0;
       switch (season) {
+        case Season.halloween:
+          if (i % 3 == 0) {
+            // friendly bats
+            final o = Offset(((sd[0] + t * 0.4) % 1.0) * s.width, s.height * (0.1 + 0.3 * sd[1]) + sin(t * 30 + i) * 10);
+            final flap = sin(t * 150 + i) * 6;
+            final bat = Paint()..color = const Color(0xFF4A148C).withValues(alpha: 0.7);
+            canvas.drawCircle(o, 6, bat);
+            canvas.drawPath(
+                Path()
+                  ..moveTo(o.dx, o.dy)
+                  ..quadraticBezierTo(o.dx - 12, o.dy - 8 - flap, o.dx - 20, o.dy + 2)
+                  ..quadraticBezierTo(o.dx - 10, o.dy, o.dx, o.dy)
+                  ..quadraticBezierTo(o.dx + 10, o.dy, o.dx + 20, o.dy + 2)
+                  ..quadraticBezierTo(o.dx + 12, o.dy - 8 - flap, o.dx, o.dy)
+                  ..close(),
+                bat);
+          } else if (i % 3 == 1) {
+            final tw = 0.5 + 0.5 * sin((t * 5 + sd[1]) * 2 * pi);
+            canvas.drawCircle(Offset(sd[0] * s.width, sd[1] * s.height * 0.5), 2 + tw * 2,
+                Paint()..color = const Color(0xFFFFE082).withValues(alpha: 0.4 + 0.5 * tw));
+          }
+        case Season.christmas:
+          final o = Offset(sd[0] * s.width + sin((p + sd[2]) * 2 * pi) * 18, p * s.height);
+          canvas.drawCircle(o, 2.5 + sd[2] * 3, Paint()..color = Colors.white.withValues(alpha: 0.9));
+          if (i % 4 == 0) {
+            final tw = 0.5 + 0.5 * sin((t * 8 + sd[1]) * 2 * pi);
+            canvas.drawCircle(Offset(sd[0] * s.width, 8 + 6 * sin(sd[0] * 12)), 5,
+                Paint()..color = _holi[i % _holi.length].withValues(alpha: 0.4 + 0.6 * tw));
+          }
+        case Season.school:
+          if (i % 3 != 0) continue;
+          final o = Offset(sd[0] * s.width + sin((p + sd[2]) * 2 * pi) * 16, (1 - p) * s.height);
+          canvas.save();
+          canvas.translate(o.dx, o.dy);
+          canvas.rotate(sd[2] * 2 - 1);
+          canvas.drawRect(const Rect.fromLTWH(-4, -18, 8, 30), Paint()..color = const Color(0xFFFFCA28).withValues(alpha: 0.75));
+          canvas.drawPath(
+              Path()
+                ..moveTo(-4, 12)
+                ..lineTo(4, 12)
+                ..lineTo(0, 20)
+                ..close(),
+              Paint()..color = const Color(0xFFFFE0B2));
+          canvas.drawRect(const Rect.fromLTWH(-4, -22, 8, 5), Paint()..color = const Color(0xFFF48FB1));
+          canvas.restore();
         case Season.winter:
           final o = Offset(sd[0] * s.width + sin((p + sd[2]) * 2 * pi) * 18, p * s.height);
           canvas.drawCircle(o, 2.5 + sd[2] * 3, Paint()..color = Colors.white.withValues(alpha: 0.9));
@@ -268,7 +349,12 @@ class _GameScaffoldState extends State<GameScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !AppState.I.childLock,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _lockHint();
+      },
+      child: Scaffold(
       body: SceneBackground(
         color: widget.color,
         hills: widget.hills,
@@ -277,7 +363,7 @@ class _GameScaffoldState extends State<GameScaffold> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
               child: Row(children: [
-                RoundBtn(icon: Icons.home_rounded, semantic: 'Home', onTap: () => Navigator.of(context).pop()),
+                HomeButton(onHome: () => Navigator.of(context).pop(), onLockedTap: _lockHint),
                 const SizedBox(width: 8),
                 Expanded(
                   child: widget.title == null
@@ -294,6 +380,84 @@ class _GameScaffoldState extends State<GameScaffold> {
               ]),
             ),
             Expanded(child: widget.child),
+          ]),
+        ),
+      ),
+      ),
+    );
+  }
+
+  void _lockHint() {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(
+        content: Text('Child lock: press and hold 🏠 to go home'),
+        duration: Duration(seconds: 2),
+      ));
+  }
+}
+
+/// Home button. With child lock on, it must be held for 1 second (a ring fills up),
+/// so a toddler can't leave an activity by accident.
+class HomeButton extends StatefulWidget {
+  final VoidCallback onHome;
+  final VoidCallback onLockedTap;
+  const HomeButton({super.key, required this.onHome, required this.onLockedTap});
+  @override
+  State<HomeButton> createState() => _HomeButtonState();
+}
+
+class _HomeButtonState extends State<HomeButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _hold = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))
+    ..addStatusListener((st) {
+      if (st == AnimationStatus.completed) {
+        Audio.I.fx('whoosh');
+        widget.onHome();
+      }
+    });
+
+  @override
+  void dispose() {
+    _hold.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AppState.I.childLock) {
+      return RoundBtn(icon: Icons.home_rounded, semantic: 'Home', onTap: widget.onHome);
+    }
+    return Semantics(
+      button: true,
+      label: 'Home (press and hold)',
+      child: Listener(
+        onPointerDown: (_) => _hold.forward(from: 0),
+        onPointerUp: (_) {
+          if (_hold.value < 1) {
+            final quick = _hold.value < 0.3;
+            _hold.reverse();
+            if (quick) widget.onLockedTap();
+          }
+        },
+        onPointerCancel: (_) => _hold.reverse(),
+        child: AnimatedBuilder(
+          animation: _hold,
+          builder: (_, __) => Stack(alignment: Alignment.center, children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+              ),
+              child: const Icon(Icons.home_rounded, size: 34, color: Colors.black54),
+            ),
+            SizedBox(
+              width: 64,
+              height: 64,
+              child: CircularProgressIndicator(value: _hold.value, strokeWidth: 5, color: Colors.orange),
+            ),
           ]),
         ),
       ),

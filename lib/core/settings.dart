@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data.dart';
+
 enum AgeMode { baby, toddler, preschool }
 
 class PlacedSticker {
@@ -43,6 +45,13 @@ class AppState extends ChangeNotifier {
   Set<String> traced = {};
   Map<String, int> plays = {};
   int totalMinutes = 0;
+  List<String> toys = [];
+  Map<String, List<int>> letterStats = {}; // letter -> [right, wrong]
+  bool childLock = true; // hold the home button to leave, back button blocked
+  bool teacher = false; // Teacher Mode: all activities unlocked + report card
+
+  /// One present for every 5 stickers.
+  int get presents => (stickers ~/ 5 - toys.length).clamp(0, 999);
 
   DateTime sessionStart = DateTime.now();
 
@@ -69,6 +78,15 @@ class AppState extends ChangeNotifier {
       placed = (p.getStringList('placed') ?? []).map(PlacedSticker.decode).whereType<PlacedSticker>().toList();
       traced = (p.getStringList('traced') ?? []).toSet();
       totalMinutes = p.getInt('minutes') ?? 0;
+      toys = p.getStringList('toys') ?? [];
+      childLock = p.getBool('childLock') ?? true;
+      teacher = p.getBool('teacher') ?? false;
+      for (final s in p.getStringList('letterStats') ?? <String>[]) {
+        final parts = s.split(':');
+        if (parts.length == 3) {
+          letterStats[parts[0]] = [int.tryParse(parts[1]) ?? 0, int.tryParse(parts[2]) ?? 0];
+        }
+      }
       for (final s in p.getStringList('plays') ?? <String>[]) {
         final i = s.lastIndexOf(':');
         if (i > 0) plays[s.substring(0, i)] = int.tryParse(s.substring(i + 1)) ?? 0;
@@ -94,6 +112,10 @@ class AppState extends ChangeNotifier {
     p.setStringList('placed', placed.map((e) => e.encode()).toList());
     p.setStringList('traced', traced.toList());
     p.setInt('minutes', totalMinutes);
+    p.setStringList('toys', toys);
+    p.setBool('childLock', childLock);
+    p.setBool('teacher', teacher);
+    p.setStringList('letterStats', letterStats.entries.map((e) => '${e.key}:${e.value[0]}:${e.value[1]}').toList());
     p.setStringList('plays', plays.entries.map((e) => '${e.key}:${e.value}').toList());
   }
 
@@ -114,11 +136,26 @@ class AppState extends ChangeNotifier {
   void recordTraced(String l) => update(() => traced.add(l));
   void addMinute() => update(() => totalMinutes++);
 
+  /// Remember right / wrong answers per letter for the report card.
+  void recordLetter(String letter, bool right) => update(() {
+        final k = letter.toUpperCase();
+        final v = letterStats[k] ?? [0, 0];
+        letterStats[k] = right ? [v[0] + 1, v[1]] : [v[0], v[1] + 1];
+      });
+
+  String openPresent(int seed) {
+    final t = toyPool[(toys.length * 7 + seed) % toyPool.length];
+    update(() => toys.add(t));
+    return t;
+  }
+
   void resetProgress() => update(() {
         stickers = 0;
         placed = [];
         traced = {};
         plays = {};
         totalMinutes = 0;
+        toys = [];
+        letterStats = {};
       });
 }

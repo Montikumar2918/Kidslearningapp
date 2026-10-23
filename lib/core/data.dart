@@ -206,3 +206,30 @@ final learnCategories = [
 
 const praiseEn = ['Well done!', 'Great job!', 'Yay! You did it!', 'Super!', 'Wonderful!', 'Clap clap clap!'];
 const praiseHi = ['बहुत अच्छा!', 'शाबाश!', 'वाह! बहुत बढ़िया!', 'कमाल कर दिया!', 'ताली ताली ताली!'];
+
+// ───────────────────────────── Phonics ─────────────────────────────
+
+/// Spoken approximations of each letter's sound (works with text-to-speech).
+const letterSounds = {
+  'A': 'ah', 'B': 'buh', 'C': 'kuh', 'D': 'duh', 'E': 'eh', 'F': 'fff', 'G': 'guh', 'H': 'hhh',
+  'I': 'ih', 'J': 'juh', 'K': 'kuh', 'L': 'lll', 'M': 'mmm', 'N': 'nnn', 'O': 'aw', 'P': 'puh',
+  'Q': 'kwuh', 'R': 'rrr', 'S': 'sss', 'T': 'tuh', 'U': 'uh', 'V': 'vvv', 'W': 'wuh', 'X': 'ks',
+  'Y': 'yuh', 'Z': 'zzz',
+};
+
+String soundOf(String letter) => letterSounds[letter.toUpperCase()] ?? letter;
+
+/// "B says buh, buh, Ball" — for capital or small letter items.
+List<String> letterSoundPhrase(LearnItem it) {
+  final l = it.label ?? '';
+  final idx = abc.indexWhere((a) => a.label == l.toUpperCase());
+  final word = idx >= 0 ? abc[idx].en.split(' for ').last : '';
+  final s = soundOf(l);
+  return ['$l says $s, $s', word];
+}
+
+LearnItem abcItem(String letter) => abc.firstWhere((a) => a.label == letter.toUpperCase());
+
+const vowels = {'A', 'E', 'I', 'O', 'U'};
+
+const toyPool = ['🧸', '🪀', '🪁', '🚂', '🎠', '🪅', '🎺', '🥁', '🚀', '🤖', '🦖', '⚽', '🎨', '🧩', '🪆', '🛝', '🎸', '🚁', '🦄', '🏰'];

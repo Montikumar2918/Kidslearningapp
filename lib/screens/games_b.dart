@@ -338,7 +338,9 @@ class _CanopyPainter extends CustomPainter {
 // ───────────────────────────── PUZZLE ─────────────────────────────
 
 class PuzzleScreen extends StatefulWidget {
-  const PuzzleScreen({super.key});
+  /// letters = true → Alphabet Puzzle (build a big letter).
+  final bool letters;
+  const PuzzleScreen({super.key, this.letters = false});
   @override
   State<PuzzleScreen> createState() => _PuzzleScreenState();
 }
@@ -357,7 +359,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
   }
 
   void _newPuzzle() {
-    final pool = [...animals, ...fruits, ...vehicles];
+    final pool = widget.letters ? abc : [...animals, ...fruits, ...vehicles];
     _item = pool[_rnd.nextInt(pool.length)];
     final four = AppState.I.age == AgeMode.preschool;
     _cols = 2;
@@ -378,7 +380,13 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
           ),
         ),
         alignment: Alignment.center,
-        child: Text(_item.emoji, style: TextStyle(fontSize: min(w, h) * 0.72)),
+        child: widget.letters
+            ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(_item.label!,
+                    style: TextStyle(fontSize: min(w, h) * 0.62, fontWeight: FontWeight.w900, color: darker(_item.color))),
+                Text(_item.emoji, style: TextStyle(fontSize: min(w, h) * 0.22)),
+              ])
+            : Text(_item.emoji, style: TextStyle(fontSize: min(w, h) * 0.72)),
       );
 
   Widget _piece(int idx, double w, double h, {double border = 3}) {
@@ -417,7 +425,8 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
         celebrate(context);
         Future.delayed(const Duration(milliseconds: 1800), () {
           final snd = _item.sound(hi);
-          Audio.I.say([_item.name(hi), if (snd != null) snd]);
+          if (widget.letters) AppState.I.recordLetter(_item.label!, true);
+          Audio.I.say(widget.letters ? letterSoundPhrase(_item) : [_item.name(hi), if (snd != null) snd]);
         });
         Future.delayed(const Duration(milliseconds: 4200), () {
           if (mounted) setState(_newPuzzle);
@@ -430,7 +439,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
   Widget build(BuildContext context) {
     final hi = AppState.I.hindi;
     return GameScaffold(
-      id: 'puzzle',
+      id: widget.letters ? 'abcpuzzle' : 'puzzle',
       color: const Color(0xFFFFCCBC),
       title: hi ? 'टुकड़े खींचो' : 'Drag the pieces',
       child: LayoutBuilder(builder: (context, box) {

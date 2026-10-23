@@ -13,8 +13,9 @@ import 'explore.dart';
 import 'games_a.dart';
 import 'games_b.dart';
 import 'parent.dart';
+import 'letter_games.dart';
 import 'stickers.dart';
-import 'tracing.dart';
+import 'toys.dart';
 
 /// Everything a child can open from the map.
 class Activity {
@@ -28,6 +29,7 @@ class Activity {
 Category _cat(String id) => learnCategories.firstWhere((c) => c.id == id);
 
 final List<Activity> allActivities = [
+  Activity('abcland', 'ABC Land', 'ABC नगर', '🔤', const Color(0xFF42A5F5), AgeMode.baby, () => const AbcLandScreen()),
   Activity('animals', 'Animals', 'जानवर', '🐄', const Color(0xFFFFB74D), AgeMode.baby, () => ExploreScreen(category: _cat('animals'))),
   Activity('bubbles', 'Bubbles', 'बुलबुले', '🫧', const Color(0xFF4FC3F7), AgeMode.baby, () => const BubbleScreen()),
   Activity('piano', 'Piano', 'पियानो', '🎹', const Color(0xFFBA68C8), AgeMode.baby, () => const PianoScreen()),
@@ -44,13 +46,12 @@ final List<Activity> allActivities = [
   Activity('findit', 'Find It', 'ढूँढो', '🔎', const Color(0xFF9575CD), AgeMode.toddler, () => const FindItScreen()),
   Activity('catch', 'Catch It', 'पकड़ो', '🧺', const Color(0xFF8BC34A), AgeMode.toddler, () => const CatchScreen()),
   Activity('puzzle', 'Puzzle', 'पहेली', '🧩', const Color(0xFFFF7043), AgeMode.toddler, () => const PuzzleScreen()),
-  Activity('trace', 'Tracing', 'लिखो', '✏️', const Color(0xFF42A5F5), AgeMode.toddler, () => const TracingMenuScreen()),
   Activity('vyanjan', 'क ख ग', 'व्यंजन', 'क', const Color(0xFF9575CD), AgeMode.toddler, () => ExploreScreen(category: _cat('vyanjan'))),
-  Activity('order', 'Caterpillar', 'इल्ली ट्रेन', '🐛', const Color(0xFF9CCC65), AgeMode.preschool, () => const OrderScreen()),
 ];
 
 List<Activity> visibleActivities() => allActivities
-    .where((a) => a.minAge.index <= AppState.I.age.index && !AppState.I.disabledGames.contains(a.id))
+    .where((a) =>
+        (AppState.I.teacher || a.minAge.index <= AppState.I.age.index) && !AppState.I.disabledGames.contains(a.id))
     .toList();
 
 class HomeScreen extends StatefulWidget {
@@ -172,9 +173,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
       child: Row(children: [
-        Text(hi ? 'चलो सीखें' : 'Kids Learning',
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF4E342E))),
-        const Spacer(),
+        Expanded(
+          child: Text(hi ? 'चलो सीखें' : 'Kids Learning',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF4E342E))),
+        ),
         _pill(
           child: Text(hi ? 'अ' : 'A', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFFE64A19))),
           label: 'Switch language',
@@ -184,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             setState(() => _bubble = seasonGreeting(currentSeason(), AppState.I.hindi));
           },
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         _pill(
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             const Text('📒', style: TextStyle(fontSize: 22)),
@@ -203,7 +207,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StickerBookScreen()));
           },
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
+        _pill(
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Text('🎁', style: TextStyle(fontSize: 22)),
+            if (AppState.I.presents > 0)
+              Container(
+                margin: const EdgeInsets.only(left: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(10)),
+                child: Text('${AppState.I.presents}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+          ]),
+          label: 'Toy room',
+          onTap: () {
+            Audio.I.fx('whoosh');
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ToyRoomScreen()));
+          },
+        ),
+        const SizedBox(width: 6),
         _pill(
           child: const Icon(Icons.lock_outline, color: Colors.black45),
           label: 'Parents',
@@ -340,7 +362,7 @@ class _MapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size s) {
     // grassy islands under the stops
-    final grass = Paint()..color = (season == Season.winter ? Colors.white : const Color(0xFFA5D6A7)).withValues(alpha: 0.7);
+    final grass = Paint()..color = (season == Season.winter || season == Season.christmas ? Colors.white : const Color(0xFFA5D6A7)).withValues(alpha: 0.7);
     for (final p in pts) {
       canvas.drawOval(Rect.fromCenter(center: p.translate(0, 58), width: 150, height: 34), grass);
     }
@@ -369,11 +391,16 @@ class _MapPainter extends CustomPainter {
       }
     }
     // decorations
-    final deco = season == Season.winter
-        ? ['⛄', '🌲']
-        : season == Season.diwali
-            ? ['🪔', '🌼']
-            : ['🌳', '🌷', '🍄', '🌻'];
+    final deco = switch (season) {
+      Season.winter => ['⛄', '🌲'],
+      Season.diwali => ['🪔', '🌼'],
+      Season.halloween => ['🎃', '🍬'],
+      Season.christmas => ['🎄', '🎁'],
+      Season.school => ['🎒', '✏️', '📚'],
+      Season.holi => ['🎨', '🌸'],
+      Season.birthday => ['🎈', '🎂'],
+      _ => ['🌳', '🌷', '🍄', '🌻'],
+    };
     for (var i = 0; i < pts.length; i++) {
       final left = pts[i].dx > s.width / 2;
       final tp = TextPainter(

@@ -1,4 +1,4 @@
-# Kids Learning App 🐘🐤 (v2.0)
+# Kids Learning App 🐘🐤 (v3.0)
 
 An offline learning playground for children aged **0–5** (focus on 0–2), in pure Flutter/Dart.
 No database, no API, no internet, no ads.
@@ -30,10 +30,45 @@ No database, no API, no internet, no ads.
 
 Settings and progress are stored only on the phone (shared_preferences).
 
+## New in v3 — ABC Land 🔤
+A hub of 18 letter activities in three groups that parents can switch on or off.
+
+**Tracing ✍️**
+- Trace ABC, abc and 123 with real stroke order: numbered green start dots, orange arrows along each stroke, a demo dot, and a rainbow trail.
+- **A–Z Writing Mode** goes through the whole alphabet with fewer hints.
+- Hindi अ–ज्ञ tracing.
+
+**Phonics 🔊**
+- **Letter Sounds:** "B says buh, buh, Ball".
+- **Sound Match:** hear a sound and pick its letter.
+- **Big & Small:** drag a small letter onto its capital.
+- **Letter Sorting:** big vs small, or vowels vs other letters.
+
+**Letter games 🎮**
+- Bubble A–Z
+- Trampoline: move the trampoline so Chiku jumps up and catches letters
+- Collect Letters, with a basket
+- Alphabet House doorbells
+- Letter Puzzle
+- ABC Bingo
+- Caterpillar ordering
+- Color by Letters
+- Frog Jump to the right lily pad
+
+**Rewards 🎁:** every 5 stickers earns a present. Tap it 3 times to unwrap a toy for the Toy Room shelf.
+
+**Seasons:** Halloween (friendly pumpkins and bats), Christmas, Back to School, Diwali, Holi, rain, winter, summer and birthday.
+
+**Teacher Mode 🍎:** unlocks every activity at any age. The **Report Card** colours each letter green, yellow or red by accuracy, shows what has been traced, and lists the letters to practise next.
+
+**Child lock 🔒:** on by default. The back button is blocked, and the 🏠 button must be held for 1 second.
+
+**Recorded voices 🎙️:** put mp3/wav files in `assets/voice/`, named after the phrase (see the README there). The app plays the recording instead of the phone voice.
+
 ## Build the APK on GitHub
 1. Create a new GitHub repository and upload everything in this folder, **including the hidden `.github` folder**:
    ```
-   git init && git add . && git commit -m "Kids Learning App v2"
+   git init && git add . && git commit -m "Kids Learning App v3"
    git branch -M main
    git remote add origin https://github.com/<you>/kids-learning-app.git
    git push -u origin main

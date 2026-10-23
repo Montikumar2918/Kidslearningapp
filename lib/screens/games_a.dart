@@ -289,7 +289,9 @@ class _PianoScreenState extends State<PianoScreen> with SingleTickerProviderStat
 // ───────────────────────────── DOORBELL HOUSE ─────────────────────────────
 
 class DoorbellScreen extends StatefulWidget {
-  const DoorbellScreen({super.key});
+  /// letters = true → Alphabet Doorbell House (door shows a letter, inside is its picture).
+  final bool letters;
+  const DoorbellScreen({super.key, this.letters = false});
   @override
   State<DoorbellScreen> createState() => _DoorbellScreenState();
 }
@@ -305,9 +307,15 @@ class _DoorbellScreenState extends State<DoorbellScreen> {
   @override
   void initState() {
     super.initState();
-    _guests = ([...animals]..shuffle()).take(6).toList();
+    _guests = _pickGuests();
     WidgetsBinding.instance.addPostFrameCallback(
         (_) => Audio.I.say([AppState.I.hindi ? 'घंटी बजाओ! कौन है?' : 'Ring the bell! Who is it?']));
+  }
+
+  List<LearnItem> _pickGuests() {
+    if (!widget.letters) return ([...animals]..shuffle()).take(6).toList();
+    final start = Random().nextInt(21);
+    return abc.sublist(start, start + 6);
   }
 
   void _ring(int i) {
@@ -328,7 +336,10 @@ class _DoorbellScreenState extends State<DoorbellScreen> {
       });
       Audio.I.fx('boing');
       final snd = g.sound(hi);
-      Audio.I.say([
+      if (widget.letters) {
+        Audio.I.say(letterSoundPhrase(g));
+        AppState.I.recordLetter(g.label!, true);
+      } else Audio.I.say([
         hi ? 'दरवाज़ा नंबर ${i + 1}' : 'Door number ${i + 1}',
         hi ? 'यह ${g.hi} है!' : "It's a ${g.en}!",
         if (snd != null) snd,
@@ -340,7 +351,7 @@ class _DoorbellScreenState extends State<DoorbellScreen> {
           setState(() {
             _open.clear();
             _seen.clear();
-            _guests = ([...animals]..shuffle()).take(6).toList();
+            _guests = _pickGuests();
           });
         });
       }
@@ -351,10 +362,10 @@ class _DoorbellScreenState extends State<DoorbellScreen> {
   Widget build(BuildContext context) {
     final hi = AppState.I.hindi;
     return GameScaffold(
-      id: 'doorbell',
+      id: widget.letters ? 'abcdoor' : 'doorbell',
       color: const Color(0xFFFFCCBC),
       hills: true,
-      title: hi ? 'कौन है?' : 'Who is it?',
+      title: widget.letters ? (hi ? 'अक्षर घर' : 'Alphabet House') : (hi ? 'कौन है?' : 'Who is it?'),
       child: LayoutBuilder(builder: (context, box) {
         final w = min(box.maxWidth - 24, box.maxHeight * 0.72);
         return Center(
@@ -435,7 +446,7 @@ class _DoorbellScreenState extends State<DoorbellScreen> {
                   child: Stack(children: [
                     Align(
                       alignment: const Alignment(0, -0.45),
-                      child: Text('${i + 1}',
+                      child: Text(widget.letters ? _guests[i].label! : '${i + 1}',
                           style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white)),
                     ),
                     const Align(
@@ -837,6 +848,174 @@ class _FillPainter extends CustomPainter {
       final p = pic.regions[i].path(size);
       canvas.drawPath(p, Paint()..color = fills[i]);
       canvas.drawPath(p, outline);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// ───────────────────────────── COLOR BY LETTERS ─────────────────────────────
+// Each part of the picture shows a letter; the palette says which colour each letter is.
+
+class ColorByLettersScreen extends StatefulWidget {
+  const ColorByLettersScreen({super.key});
+  @override
+  State<ColorByLettersScreen> createState() => _ColorByLettersScreenState();
+}
+
+class _ColorByLettersScreenState extends State<ColorByLettersScreen> {
+  static const _keyColors = [Color(0xFFEF5350), Color(0xFF42A5F5), Color(0xFFFFEE58), Color(0xFF66BB6A)];
+  static const _keyNames = ['red', 'blue', 'yellow', 'green'];
+  int _pic = 0;
+  int _sel = 0;
+  late List<String> _keys; // 4 letters for this picture
+  late List<int> _regionKey; // which key each region needs
+  late List<bool> _filled;
+
+  _Picture get pic => _pictures[_pic];
+
+  @override
+  void initState() {
+    super.initState();
+    _setup();
+  }
+
+  void _setup() {
+    final rnd = Random();
+    final start = rnd.nextInt(23);
+    _keys = [for (var i = 0; i < 4; i++) String.fromCharCode(65 + start + i)];
+    _regionKey = [for (var i = 0; i < pic.regions.length; i++) (i * 3 + _pic) % 4];
+    _filled = List.filled(pic.regions.length, false);
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => Audio.I.say(['Color by letters! ${_keys[0]} is red, ${_keys[1]} is blue, ${_keys[2]} is yellow, ${_keys[3]} is green']));
+  }
+
+  void _tap(Offset p, Size s) {
+    for (var i = pic.regions.length - 1; i >= 0; i--) {
+      if (pic.regions[i].path(s).contains(p)) {
+        if (_filled[i]) return;
+        final need = _regionKey[i];
+        if (need == _sel) {
+          HapticFeedback.lightImpact();
+          Audio.I.fx('splash');
+          AppState.I.recordLetter(_keys[need], true);
+          setState(() => _filled[i] = true);
+          if (_filled.every((f) => f)) {
+            Future.delayed(const Duration(milliseconds: 400), () {
+              if (mounted) celebrate(context, text: 'Beautiful!');
+            });
+          }
+        } else {
+          AppState.I.recordLetter(_keys[need], false);
+          Audio.I.fx('boing');
+          Audio.I.say(['This part is ${_keys[need]}. ${_keys[need]} is ${_keyNames[need]}']);
+        }
+        return;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GameScaffold(
+      id: 'colorletters',
+      color: const Color(0xFFFFE0B2),
+      title: 'Color by Letters',
+      child: Column(children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                ),
+                padding: const EdgeInsets.all(10),
+                child: LayoutBuilder(builder: (context, box) {
+                  return GestureDetector(
+                    onTapDown: (d) => _tap(d.localPosition, box.biggest),
+                    child: CustomPaint(
+                      size: box.biggest,
+                      painter: _LetterFillPainter(pic, [
+                        for (var i = 0; i < pic.regions.length; i++) _filled[i] ? _keyColors[_regionKey[i]] : Colors.white
+                      ], [
+                        for (var i = 0; i < pic.regions.length; i++) _filled[i] ? '' : _keys[_regionKey[i]]
+                      ]),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            for (var k = 0; k < 4; k++)
+              GestureDetector(
+                onTap: () {
+                  setState(() => _sel = k);
+                  Audio.I.say(['${_keys[k]}, ${_keyNames[k]}']);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: _sel == k ? 76 : 64,
+                  height: _sel == k ? 76 : 64,
+                  decoration: BoxDecoration(
+                    color: _keyColors[k],
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _sel == k ? Colors.black54 : Colors.white, width: 4),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(_keys[k], style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.black87)),
+                ),
+              ),
+            RoundBtn(
+              icon: Icons.arrow_forward_rounded,
+              semantic: 'Next picture',
+              onTap: () => setState(() {
+                _pic = (_pic + 1) % _pictures.length;
+                _setup();
+              }),
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
+class _LetterFillPainter extends CustomPainter {
+  final _Picture pic;
+  final List<Color> fills;
+  final List<String> labels;
+  _LetterFillPainter(this.pic, this.fills, this.labels);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final outline = Paint()
+      ..color = const Color(0xFF424242)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeJoin = StrokeJoin.round;
+    for (var i = 0; i < pic.regions.length; i++) {
+      final p = pic.regions[i].path(size);
+      canvas.drawPath(p, Paint()..color = fills[i]);
+      canvas.drawPath(p, outline);
+    }
+    for (var i = 0; i < pic.regions.length; i++) {
+      if (labels[i].isEmpty) continue;
+      final b = pic.regions[i].path(size).getBounds();
+      final fs = (min(b.width, b.height) * 0.55).clamp(12.0, 40.0);
+      final tp = TextPainter(
+        text: TextSpan(text: labels[i], style: TextStyle(fontSize: fs, fontWeight: FontWeight.w900, color: Colors.black54)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, b.center - Offset(tp.width / 2, tp.height / 2));
     }
   }
 
