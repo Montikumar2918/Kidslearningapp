@@ -249,7 +249,7 @@ class ParentScreen extends StatelessWidget {
               subtitle: Text('Works fully offline. No internet permission, no ads, no accounts. '
                   'Settings and progress stay only on this phone.'),
             ),
-            const ListTile(leading: Icon(Icons.info_outline), title: Text('Kids Learning App'), subtitle: Text('Version 3.0.0')),
+            const ListTile(leading: Icon(Icons.info_outline), title: Text('Kids Learning App'), subtitle: Text('Version 4.0.0')),
           ]),
         );
       },

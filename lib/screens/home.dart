@@ -13,6 +13,7 @@ import 'explore.dart';
 import 'games_a.dart';
 import 'games_b.dart';
 import 'parent.dart';
+import 'adventure.dart';
 import 'letter_games.dart';
 import 'stickers.dart';
 import 'toys.dart';
@@ -29,6 +30,8 @@ class Activity {
 Category _cat(String id) => learnCategories.firstWhere((c) => c.id == id);
 
 final List<Activity> allActivities = [
+  Activity('adventure', 'Magic Adventure', 'जादुई यात्रा', '🗺️', const Color(0xFFFF7043), AgeMode.baby,
+      () => const AdventureMapScreen()),
   Activity('abcland', 'ABC Land', 'ABC नगर', '🔤', const Color(0xFF42A5F5), AgeMode.baby, () => const AbcLandScreen()),
   Activity('animals', 'Animals', 'जानवर', '🐄', const Color(0xFFFFB74D), AgeMode.baby, () => ExploreScreen(category: _cat('animals'))),
   Activity('bubbles', 'Bubbles', 'बुलबुले', '🫧', const Color(0xFF4FC3F7), AgeMode.baby, () => const BubbleScreen()),

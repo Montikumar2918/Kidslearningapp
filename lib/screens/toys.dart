@@ -247,6 +247,15 @@ class ReportCardScreen extends StatelessWidget {
           Text(needPractice.join('  '), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.red)),
           const SizedBox(height: 16),
         ],
+        const Text('Magic Letter Adventure', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+        Text('${s.adventureLevel} of 26 letters finished · ${s.introduced.length} letters met · '
+            '${s.demoCount.values.fold<int>(0, (a, b) => a + b)} demonstrations asked for'),
+        if (s.practiceSuggestions().isNotEmpty)
+          Text('Gentle revision suggested: ${s.practiceSuggestions().take(6).join('  ')}',
+              style: const TextStyle(fontSize: 18, color: Colors.deepOrange, fontWeight: FontWeight.w800)),
+        const Text('(Suggestions come only from hints and practice in the app. They are not an assessment.)',
+            style: TextStyle(fontSize: 12, color: Colors.black45)),
+        const SizedBox(height: 16),
         const Text('Hindi traced', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
         Text(
             s.traced.where((l) => l.runes.any((r) => r >= 0x0900 && r <= 0x097F)).join('  ').ifEmpty('None yet'),

@@ -50,6 +50,14 @@ class AppState extends ChangeNotifier {
   bool childLock = true; // hold the home button to leave, back button blocked
   bool teacher = false; // Teacher Mode: all activities unlocked + report card
 
+  // ── Magic Letter Adventure learning model (local only) ──
+  int adventureLevel = 0; // how many letters of the A–Z path are finished
+  Set<String> introduced = {};
+  Map<String, int> demoCount = {}; // demonstrations requested per glyph
+  Map<String, int> offTrack = {}; // off-track moments per glyph
+  Set<String> garden = {}; // letters planted in the Magic Garden
+  List<String> drawings = []; // saved Drawing Studio pictures (JSON)
+
   /// One present for every 5 stickers.
   int get presents => (stickers ~/ 5 - toys.length).clamp(0, 999);
 
@@ -81,6 +89,12 @@ class AppState extends ChangeNotifier {
       toys = p.getStringList('toys') ?? [];
       childLock = p.getBool('childLock') ?? true;
       teacher = p.getBool('teacher') ?? false;
+      adventureLevel = p.getInt('advLevel') ?? 0;
+      introduced = (p.getStringList('introduced') ?? []).toSet();
+      garden = (p.getStringList('garden') ?? []).toSet();
+      drawings = p.getStringList('drawings') ?? [];
+      demoCount = _decodeCounts(p.getStringList('demoCount'));
+      offTrack = _decodeCounts(p.getStringList('offTrack'));
       for (final s in p.getStringList('letterStats') ?? <String>[]) {
         final parts = s.split(':');
         if (parts.length == 3) {
@@ -115,6 +129,12 @@ class AppState extends ChangeNotifier {
     p.setStringList('toys', toys);
     p.setBool('childLock', childLock);
     p.setBool('teacher', teacher);
+    p.setInt('advLevel', adventureLevel);
+    p.setStringList('introduced', introduced.toList());
+    p.setStringList('garden', garden.toList());
+    p.setStringList('drawings', drawings);
+    p.setStringList('demoCount', demoCount.entries.map((e) => '${e.key}:${e.value}').toList());
+    p.setStringList('offTrack', offTrack.entries.map((e) => '${e.key}:${e.value}').toList());
     p.setStringList('letterStats', letterStats.entries.map((e) => '${e.key}:${e.value[0]}:${e.value[1]}').toList());
     p.setStringList('plays', plays.entries.map((e) => '${e.key}:${e.value}').toList());
   }
@@ -143,6 +163,39 @@ class AppState extends ChangeNotifier {
         letterStats[k] = right ? [v[0] + 1, v[1]] : [v[0], v[1] + 1];
       });
 
+  static Map<String, int> _decodeCounts(List<String>? l) {
+    final m = <String, int>{};
+    for (final s in l ?? const <String>[]) {
+      final i = s.lastIndexOf(':');
+      if (i > 0) m[s.substring(0, i)] = int.tryParse(s.substring(i + 1)) ?? 0;
+    }
+    return m;
+  }
+
+  void recordDemo(String g) => update(() => demoCount[g] = (demoCount[g] ?? 0) + 1);
+  void recordOffTrack(String g) => update(() => offTrack[g] = (offTrack[g] ?? 0) + 1);
+  void markIntroduced(String g) => update(() => introduced.add(g));
+
+  void finishAdventureLetter(int index) => update(() {
+        if (index + 1 > adventureLevel) adventureLevel = (index + 1).clamp(0, 26);
+      });
+
+  /// Letters that could use a little more practice (gentle revision, not a diagnosis):
+  /// many demos requested, often off the path, or low recognition accuracy.
+  List<String> practiceSuggestions() {
+    final out = <String, double>{};
+    for (final g in introduced) {
+      final k = g.toUpperCase();
+      final st = letterStats[k];
+      final tries = st == null ? 0 : st[0] + st[1];
+      final acc = tries == 0 ? 1.0 : st![0] / tries;
+      final score = (demoCount[g] ?? 0) * 1.0 + (offTrack[g] ?? 0) * 0.5 + (tries >= 3 && acc < 0.6 ? 3 : 0);
+      if (score >= 3) out[g] = score;
+    }
+    final l = out.keys.toList()..sort((a, b) => out[b]!.compareTo(out[a]!));
+    return l;
+  }
+
   String openPresent(int seed) {
     final t = toyPool[(toys.length * 7 + seed) % toyPool.length];
     update(() => toys.add(t));
@@ -157,5 +210,10 @@ class AppState extends ChangeNotifier {
         totalMinutes = 0;
         toys = [];
         letterStats = {};
+        adventureLevel = 0;
+        introduced = {};
+        demoCount = {};
+        offTrack = {};
+        garden = {};
       });
 }

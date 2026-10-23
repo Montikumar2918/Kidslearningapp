@@ -1,4 +1,4 @@
-# Kids Learning App 🐘🐤 (v3.0)
+# Kids Learning App 🐘🐤 (v4.0)
 
 An offline learning playground for children aged **0–5** (focus on 0–2), in pure Flutter/Dart.
 No database, no API, no internet, no ads.
@@ -30,7 +30,56 @@ No database, no API, no internet, no ads.
 
 Settings and progress are stored only on the phone (shared_preferences).
 
-## New in v3 — ABC Land 🔤
+## New in v4 — Magic Letter Adventure ✨
+**Adventure map 🗺️** (first stop on home) has 5 places:
+- Alphabet Garden 🌷
+- Animal Forest 🌳 (opens after 2 letters)
+- Colorful Art Island 🎨 (after 4)
+- Hindi Story Village 🛖 (always open)
+- Discovery Sky ☁️ (after 6)
+
+Teacher Mode opens everything.
+
+**Magic Letter Adventure:** each letter A–Z is a small story:
+1. Meet the letter.
+2. Hear its name and its sound.
+3. Watch a stroke-by-stroke demo: a guide dot walks each real stroke in order, lighting it up, with arrows and spoken steps.
+4. Trace it yourself.
+5. Colour its picture (optional, can be skipped).
+6. See the letter come alive.
+7. Play a quick find-the-letter game.
+8. Get a reward.
+9. The next letter unlocks.
+
+Letters can always be replayed.
+
+**Tracing engine** (`lib/core/tracing_engine.dart`, pure Dart, unit-tested):
+- Checks that the child starts near the green dot and draws strokes in order.
+- Progress only moves forward, a little at a time, and only near the path.
+- Tolerance depends on age: 17% / 13% / 10% of the box.
+- Going off the path makes the next part glow and gives a gentle spoken hint. There are no red crosses.
+- Scribbles, backwards drawing and wrong stroke order do not count.
+
+**Letter comes alive:** a data-driven animation for each letter and number in `lib/widgets/letter_magic.dart`:
+- A grows an apple tree.
+- B gets butterflies.
+- C has a caterpillar crawling along the letter's own strokes.
+- D has a dinosaur, E a train, F a firefly lighting the path, and so on.
+
+**New games:**
+- Magic Letter Garden: trace a letter to grow its plant; the garden is saved.
+- Draw & Discover: colour the letter's picture with colours, brush sizes, undo and clear.
+- Letter Rescue: drag the lost letter to Golu; distractors increase slowly.
+- Build the Letter: each stroke is a puzzle piece that snaps into the outline.
+- Drawing Studio: free drawing; the last 12 drawings are saved on the phone and can be reopened.
+
+**Gentle revision:** demos asked for, times off the path, and wrong answers are counted per letter. The map then suggests "Let's play B again!" These suggestions are shown in the report card and are not an assessment.
+
+**Honest limits:**
+- Hindi letters do not have hand-checked stroke-order data yet, so Hindi tracing still uses the older shape-coverage tracing. Stroke-order data for स्वर and व्यंजन is still pending.
+- Artwork is still emoji plus code-drawn graphics.
+
+## v3 — ABC Land 🔤
 A hub of 18 letter activities in three groups that parents can switch on or off.
 
 **Tracing ✍️**

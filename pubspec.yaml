@@ -1,7 +1,7 @@
 name: kids_learning_app
 description: Kids Learning App - offline learning games for 0-5 year olds. No database, no API.
 publish_to: 'none'
-version: 3.0.0+3
+version: 4.0.0+4
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
