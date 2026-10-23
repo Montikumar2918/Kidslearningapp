@@ -1,7 +1,7 @@
 name: kids_learning_app
-description: Kids Learning App - offline baby learning (0-2 years). No database, no API.
+description: Kids Learning App - offline learning games for 0-5 year olds. No database, no API.
 publish_to: 'none'
-version: 1.0.0+1
+version: 2.0.0+2
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   flutter_tts: ^4.2.0
   audioplayers: ^6.1.0
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:
